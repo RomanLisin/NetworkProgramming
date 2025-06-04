@@ -43,21 +43,32 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			else if (FIRST_IPADDRESS(dwIPaddress) < 192)  dwIPmask = 0xFFFF0000;
 			else if (FIRST_IPADDRESS(dwIPaddress) < 224) dwIPmask = 0xFFFFFF00;
 			else dwIPmask = 0;
-			SetMaskAndPrefix(hIPmask, hEditPrefix, dwIPmask);
+			// Set mask to IP control 
+			SendMessage(hIPmask, IPM_SETADDRESS, 0, dwIPmask);
+			//SetMaskAndPrefix(hIPmask, hEditPrefix, dwIPmask);
+			WCHAR szPrefix[4] = {};
+			wsprintf(szPrefix, L"%d", (LPSTR)CountPrefixBits(dwIPmask));
+			//SendMessage(hEditPrefix, WM_SETTEXT, 0, (LPARAM)szPrefix);
 		}
 		break;
 		case IDC_IPMASK:
 		{
 			if (dwIPmask != 0)
-			SendMessage(hEditPrefix, WM_SETTEXT, 0, CountPrefixBits(dwIPmask));
+			{
+				/*SetMaskAndPrefix(hIPmask, hEditPrefix, dwIPmask); */
+				WCHAR szPrefix[4] = {};
+				wsprintf(szPrefix, L"%d", CountPrefixBits(dwIPmask));
+				SendMessage(hEditPrefix, WM_SETTEXT, 0, (LPARAM)szPrefix);
+			}
 		}
 		break;
 		case IDC_EDIT_PREFIX:
 		{
-			SendMessage(hIPmask, IPM_SETADDRESS, 0, 0xFFFFFFF0);
+			SendMessage(hIPmask, IPM_SETADDRESS, 0, dwIPmask);
 		}
 		break;
 		case IDOK:
+			SendMessage(hIPmask, IPM_SETADDRESS, 0, dwIPmask);
 		break;
 		case IDCANCEL:
 			EndDialog(hwnd, 0);
@@ -89,13 +100,13 @@ int CountPrefixBits(DWORD mask)
 
 void SetMaskAndPrefix(HWND hIPmask, HWND hEditPrefix, DWORD dwMask)
 {
-	// Установить маску в IP-контрол
+	// Set mask to IP control 
 	SendMessage(hIPmask, IPM_SETADDRESS, 0, dwMask);
 
-	// Сконвертировать префикс (число единичных бит) в строку
+	// convert prefix (number of sing bit) to string
 	WCHAR szPrefix[4] = {};
 	wsprintf(szPrefix, L"%d", CountPrefixBits(dwMask));
 
-	// Установить текст в Edit-контрол
+	// set text to edit-control
 	SendMessage(hEditPrefix, WM_SETTEXT, 0, (LPARAM)szPrefix);
 }
