@@ -128,8 +128,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Mask.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Mask.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
