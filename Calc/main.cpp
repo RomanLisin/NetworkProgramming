@@ -6,7 +6,7 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, INT nCmdShow)\
 {
-	DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_DIALOG_MAIN), NULL, DlgProc, 0); // if DlgProc red, change x64 to x86  or add befor DlgProc (DLGPROC)
+	DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_DIALOG_MAIN), NULL, DlgProc, 0); // if DlgProc mark red, change x64 to x86  or add befor DlgProc (DLGPROC)
 	return 0;
 }
 
@@ -22,18 +22,20 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SetFocus(GetDlgItem(hwnd, IDC_IPADDRESS));
 		}
 		break;
+
+		// For WM_COMMAND
+		// LOWORD(wParam) - who send message, HIWORD(wParam) - message code, what event happened to the sender
+		// LOWERD(lParam) - HWND, who sender, HIWORD(lParam) - don't use, = 0
 	case WM_COMMAND:
 	{
 		HWND hIPaddress = GetDlgItem(hwnd, IDC_IPADDRESS);
-		HWND hIPmask = GetDlgItem(hwnd, IDC_EDIT_PREFIX);
+		HWND hIPmask = GetDlgItem(hwnd, IDC_IPMASK);
 		HWND hEditPrefix = GetDlgItem(hwnd, IDC_EDIT_PREFIX);
 		DWORD dwIPaddress = 0;
 		DWORD dwIPmask = 0;
 
-
 		switch (LOWORD(wParam))
 		{
-
 		case IDC_IPADDRESS:
 		{
 			SendMessage(hIPaddress, IPM_GETADDRESS, 0, (LPARAM)&dwIPaddress);
