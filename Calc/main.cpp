@@ -105,6 +105,7 @@ int MaskToPrefix(DWORD mask)
 	for (int i = 31; i >= 0; i--)
 	{
 		if (CHECK_BIT(mask,i))
+		/*if((mask >> i) & 1 )*/
 		{
 			prefix++;
 		}
