@@ -1,4 +1,6 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include<Windows.h>
+#include<string>
 #include<CommCtrl.h>
 #include"resource.h"
 #define CHECK_BIT(var, pos) ((var) & (1<<(pos)))
@@ -7,7 +9,15 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 int MaskToPrefix(DWORD mask);
 DWORD PrefixToMask(int prefix);
+DWORD NetworkAddress(DWORD ip, int prefix);
 
+struct { const char* text; char textIp[32]; } strings[] = 
+{
+	{"Адрес сети: ", ""},
+	{"Широковещательный адрес: ", ""},
+	{"Количество IP-aдресов в этой сети: ", ""},
+	{"Количество узлов текущей сети: ", ""}
+};
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, INT nCmdShow)\
 {
 	DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_DIALOG_MAIN), NULL, DlgProc, 0); // if DlgProc mark red, change x64 to x86  or add befor DlgProc (DLGPROC)
@@ -60,8 +70,10 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		HWND hIPaddress = GetDlgItem(hwnd, IDC_IPADDRESS);
 		HWND hIPmask = GetDlgItem(hwnd, IDC_IPMASK);
 		HWND hEditPrefix = GetDlgItem(hwnd, IDC_EDIT_PREFIX);
+		HWND hTextControl = GetDlgItem(hwnd, IDC_STATIC_INFO);
 		DWORD dwIPaddress = 0;
 		DWORD dwIPmask = 0;
+		DWORD dwIPnetwork = 0;
 
 		switch (LOWORD(wParam))
 		{
@@ -76,6 +88,30 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				SendMessage(hIPmask, IPM_GETADDRESS, 0, (LPARAM)&dwIPmask);
 				int prefix = MaskToPrefix(dwIPmask);
 				SetDlgItemInt(hwnd, IDC_EDIT_PREFIX, prefix, FALSE);
+				dwIPnetwork = NetworkAddress(dwIPaddress, prefix);
+				//int len = GetWindowTextLength(hIPaddress);
+				//if (len <= 0) { MessageBoxA(hwnd, "Поле IP-адреса пустое", "Error", MB_ICONWARNING); return FALSE;}
+				///*std::string buffer(len + 1, '\0');*/
+				//LPSTR buffer = new char[len + 1];
+				//if (GetDlgItemTextA(hwnd, IDC_IPADDRESS, buffer, len + 1) == 0)
+				//{
+				//	MessageBoxA(hwnd, "Не удалось прочитать IP-адрес", "Error", MB_ICONWARNING);
+				//	delete[] buffer;
+				//	buffer = nullptr;
+				//	return FALSE;
+				//}
+
+				//SendMessageA(hTextControl, WM_GETTEXT, 0, (LPARAM)buffer);
+			/*	SendMessage(hTextControl, WM_SETTEXT, 0, (LPARAM)buffer);
+				delete[] buffer;
+				buffer = nullptr;*/
+
+				// преобразование dwIPnetwork в строку
+				BYTE* ipBytes = (BYTE*)&dwIPnetwork;
+				char ipStr[32];
+				sprintf(ipStr, "%d.%d.%d.%d", ipBytes[3], ipBytes[2], ipBytes[1], ipBytes[0]);
+
+				SendMessageA(hTextControl, WM_SETTEXT, 0, (LPARAM)ipStr);
 			}
 		break;
 		case IDC_IPMASK:
@@ -117,4 +153,16 @@ int MaskToPrefix(DWORD mask)
 DWORD PrefixToMask(int prefix)
 {
 	return (0xFFFFFFFF << (32 - prefix));
+}
+
+DWORD NetworkAddress(DWORD ip, int prefix)
+{
+	DWORD mask = PrefixToMask(prefix);
+	return ip & mask;
+}
+
+DWORD BroadcastAddress(DWORD ip, int prefix)
+{
+	DWORD mask = PrefixToMask(prefix);
+	return ip | ~prefix;
 }
