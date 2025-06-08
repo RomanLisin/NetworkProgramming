@@ -12,7 +12,7 @@ DWORD PrefixToMask(int prefix);
 char* NumberIPnetOrHost(DWORD mask);
 DWORD NetworkAddress(DWORD ip, int prefix);
 DWORD BroadcastAddress(DWORD ip, int prefix);
-LPSTR IpToString(DWORD ip);
+void IpToString(DWORD ip);
 void FillTextControl(HWND hTxtCntrl, DWORD dwIPaddr, int pref, DWORD dwIPmask, DWORD dwIPnet);
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, INT nCmdShow)
@@ -98,6 +98,7 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				SendMessage(hIPmask, IPM_GETADDRESS, 0, (LPARAM)&dwIPmask);
 				int prefix = MaskToPrefix(dwIPmask);
 				SetDlgItemInt(hwnd, IDC_EDIT_PREFIX, prefix, FALSE);
+				dwIPnetwork = NetworkAddress(dwIPaddress, prefix);
 
 				FillTextControl(hTextControl, dwIPaddress, prefix, dwIPmask, dwIPnetwork);
 			}
