@@ -130,32 +130,65 @@ int MaskToPrefix(DWORD mask)
 	return prefix;
 }
 
-char* NumberIPnetOrHost(DWORD mask, BOOL host)
+//char* NumberIPnetOrHost(DWORD mask, BOOL host)
+//{
+//	char strNum[256] = { 0 };
+//	int zeroBits = 0;
+//	for (int i = 31; i >= 0; i--)
+//	{
+//		if(!((mask >> i) & 1))
+//		{
+//			zeroBits++;
+//		}
+//	}
+//
+//	int numIP = (zeroBits == 0) ? 1 : (1 << zeroBits); // 2^zeroBits
+//	if (host)
+//	{
+//		int prefix = MaskToPrefix(mask);
+//		if (prefix == 32) numIP = 1;
+//		else if (prefix == 31) numIP = 2;
+//		else numIP = numIP - 2;
+//	}
+//	sprintf(strNum,"%d",numIP);
+//	return strNum;
+//}
+
+void NumberIPnetOrHost(DWORD mask, BOOL host, char* output, size_t outputSize)
 {
-	char strNum[256] = { 0 };
 	int zeroBits = 0;
 	for (int i = 31; i >= 0; i--)
 	{
-		if(!((mask >> i) & 1))
+		if (!((mask >> i) & 1))
 		{
 			zeroBits++;
 		}
 	}
 
-	int numIP = (zeroBits == 0) ? 1 : (1 << zeroBits); // 2^zeroBits
+	uint32_t numIP; // = (zeroBits == 0) ? 1 : (1 << zeroBits);
 	if (host)
 	{
 		int prefix = MaskToPrefix(mask);
-		if (prefix == 32) numIP = 1;
-		else if (prefix == 31) numIP = 2;
-		else numIP = numIP - 2;
+		
+		if (prefix == 32) { numIP = 1; }  // только один адрес (сеть и хост совпадают)
+	
+		else if (prefix == 31) numIP = 2; //  нет широковещательного адреса (RFC 3021)
+		else  
+		{   // для остальных случаев: (2^zeroBits - 2)
+			numIP = (zeroBits >= 32) ? 0 : ((1u << zeroBits) - 2);
+		}
+			//numIP = numIP - 2;
+	}  else {
+		// количество IP-адресов в сети: 2^zeroBits
+		numIP = (zeroBits >= 32) ? 0 : (1u << zeroBits);
 	}
-	sprintf(strNum,"%d",numIP);
-	return strNum;
+	snprintf(output, outputSize, "%u", numIP);
 }
 
 DWORD PrefixToMask(int prefix)
 {
+	if (prefix <= 0) return 0;
+	if (prefix >= 32) return 0xFFFFFFFF;
 	return (0xFFFFFFFF << (32 - prefix));
 }
 
@@ -171,56 +204,94 @@ DWORD BroadcastAddress(DWORD ip, int prefix)
 	return ip | ~mask;
 }
 
-LPSTR IpToString(DWORD ip)
+//LPSTR IpToString(DWORD ip)
+//{
+//	BYTE* ipBytes = (BYTE*)&ip;
+//	char ipStr[32];
+//	sprintf(ipStr, "%d.%d.%d.%d", ipBytes[3], ipBytes[2], ipBytes[1], ipBytes[0]);
+//	return (LPSTR)ipStr;
+//}
+
+void IpToString(DWORD ip, char* output, size_t outputSize)
 {
 	BYTE* ipBytes = (BYTE*)&ip;
-	char ipStr[32];
-	sprintf(ipStr, "%d.%d.%d.%d", ipBytes[3], ipBytes[2], ipBytes[1], ipBytes[0]);
-	return (LPSTR)ipStr;
+	snprintf(output, outputSize, "%d.%d.%d.%d", ipBytes[3], ipBytes[2], ipBytes[1], ipBytes[0]);
 }
 
+//void FillTextControl(HWND hTxtCntrl, DWORD dwIPaddr, int pref, DWORD dwIPmask, DWORD dwIPnet)
+//{
+//
+//	struct { const char* text; char textIp[32]; } strings[] = 
+//	{
+//		{"Адрес сети: ", ""},
+//		{"Широковещательный адрес: ", ""},
+//		{"Количество IP-aдресов в этой сети: ", ""},
+//		{"Количество узлов текущей сети: ", ""}
+//	};
+//	
+//	SendMessageA(hTxtCntrl, WM_SETTEXT, 0, (LPARAM)"Info:");
+//	char buff[256];
+//	SendMessageA(hTxtCntrl, WM_GETTEXT, (WPARAM)256, (LPARAM)buff);
+//	strcat(buff, "\n");
+//
+//	for (int i = 0; i <= 3; i++)
+//	{
+//
+//		int variant = i%4;
+//		SendMessageA(hTxtCntrl, WM_GETTEXT, (WPARAM)256, (LPARAM)buff);
+//		strcat(buff, "\n");
+//		strcat(buff, strings[i].text);
+//		switch (variant)
+//		{
+//			case 0:
+//				strcat(buff, "\t\t\t\t");
+//				strcat(buff, IpToString(dwIPnet));
+//				break;
+//			case 1:
+//				strcat(buff, "\t\t");
+//				strcat(buff, IpToString(BroadcastAddress(dwIPaddr, pref)));
+//				break;
+//			case 2:
+//				strcat(buff, "\t");
+//				strcat(buff, NumberIPnetOrHost(dwIPmask, 0));
+//				break;
+//			case 3:
+//				strcat(buff, "\t");
+//				strcat(buff, NumberIPnetOrHost(dwIPmask, 1));
+//				break;
+//		}
+//		SendMessageA(hTxtCntrl, WM_SETTEXT, 0, (LPARAM)(LPSTR)buff);
+//	}
+//}
 void FillTextControl(HWND hTxtCntrl, DWORD dwIPaddr, int pref, DWORD dwIPmask, DWORD dwIPnet)
 {
+	char buffer[1024] = { 0 };
+	char temp[256] =	{ 0 };
 
-	struct { const char* text; char textIp[32]; } strings[] = 
-	{
-		{"Адрес сети: ", ""},
-		{"Широковещательный адрес: ", ""},
-		{"Количество IP-aдресов в этой сети: ", ""},
-		{"Количество узлов текущей сети: ", ""}
-	};
-	
-	SendMessageA(hTxtCntrl, WM_SETTEXT, 0, (LPARAM)"Info:");
-	char buff[256];
-	SendMessageA(hTxtCntrl, WM_GETTEXT, (WPARAM)256, (LPARAM)buff);
-	strcat(buff, "\n");
+	strcpy(buffer, "Info:\n");
 
-	for (int i = 0; i <= 3; i++)
-	{
+	// адрес сети
+	IpToString(dwIPnet, temp, sizeof(temp));
+	strcat(buffer, "Адрес сети: \t\t\t\t");
+	strcat(buffer, temp);
+	strcat(buffer, "\n");
 
-		int variant = i%4;
-		SendMessageA(hTxtCntrl, WM_GETTEXT, (WPARAM)256, (LPARAM)buff);
-		strcat(buff, "\n");
-		strcat(buff, strings[i].text);
-		switch (variant)
-		{
-			case 0:
-				strcat(buff, "\t\t\t\t");
-				strcat(buff, IpToString(dwIPnet));
-				break;
-			case 1:
-				strcat(buff, "\t\t");
-				strcat(buff, IpToString(BroadcastAddress(dwIPaddr, pref)));
-				break;
-			case 2:
-				strcat(buff, "\t");
-				strcat(buff, NumberIPnetOrHost(dwIPmask, 0));
-				break;
-			case 3:
-				strcat(buff, "\t");
-				strcat(buff, NumberIPnetOrHost(dwIPmask, 1));
-				break;
-		}
-		SendMessageA(hTxtCntrl, WM_SETTEXT, 0, (LPARAM)(LPSTR)buff);
-	}
+	//широковещательный адрес
+	IpToString(BroadcastAddress(dwIPaddr, pref), temp, sizeof(temp));
+	strcat(buffer, "Широковещательный адрес: \t\t");
+	strcat(buffer, temp);
+	strcat(buffer, "\n");
+
+	// количество IP-адресов
+	NumberIPnetOrHost(dwIPmask, 0, temp, sizeof(temp));
+	strcat(buffer, "Количество IP-aдресов в этой сети: \t");
+	strcat(buffer, temp);
+	strcat(buffer, "\n");
+
+	// количество  узлов
+	NumberIPnetOrHost(dwIPmask, 1, temp, sizeof(temp));
+	strcat(buffer, "Количество узлов текущей сети: \t");
+	strcat(buffer, temp);
+
+	SetWindowTextA(hTxtCntrl, buffer);
 }
