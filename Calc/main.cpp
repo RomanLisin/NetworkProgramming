@@ -1,4 +1,4 @@
-#define _CRT_SECURE_NO_WARNINGS
+п»ї#define _CRT_SECURE_NO_WARNINGS
 #include<Windows.h>
 #include<CommCtrl.h>
 #include<cstdio>
@@ -140,7 +140,7 @@ void PrintInfo(HWND hwnd)
 	sprintf
 	(
 		sz_info,
-		"Info:\nАдрес сети: \t\t\t%s;\nШироковещательный адрес:\t%s;\nКоличество IP-адресов:\t%i;\nКоличество узлов:\t\t\%i",
+		"Info:\nРђРґСЂРµСЃ СЃРµС‚Рё: \t\t\t%s;\nРЁРёСЂРѕРєРѕРІРµС‰Р°С‚РµР»СЊРЅС‹Р№ Р°РґСЂРµСЃ:\t%s;\nРљРѕР»РёС‡РµСЃС‚РІРѕ IP-Р°РґСЂРµСЃРѕРІ:\t%i;\nРљРѕР»РёС‡РµСЃС‚РІРѕ СѓР·Р»РѕРІ:\t\t\%i",
 		IPtoString(dwNetworkAddress, szNetworkAddress),
 		IPtoString(dwBroadcastAddress, szBroadcastAddress),
 		dwNumberOfAddresses,
