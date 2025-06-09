@@ -1,4 +1,4 @@
-#define _CRT_SECURE_NO_WARNINGS
+п»ї#define _CRT_SECURE_NO_WARNINGS
 #include<Windows.h>
 #include<string>
 #include<CommCtrl.h>
@@ -41,7 +41,7 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 			// get current value of prefix
 			int prefix = SendMessage(pNMUpDown->hdr.hwndFrom, UDM_GETPOS, 0, 0);
-			prefix += pNMUpDown->iDelta; // учитываем изменение
+			prefix += pNMUpDown->iDelta; // СѓС‡РёС‚С‹РІР°РµРј РёР·РјРµРЅРµРЅРёРµ
 
 			if (prefix < 0) prefix = 0;
 			if (prefix > 32) prefix = 32; 
@@ -171,16 +171,16 @@ void NumberIPnetOrHost(DWORD mask, BOOL host, char* output, size_t outputSize)
 	{
 		int prefix = MaskToPrefix(mask);
 		
-		if (prefix == 32) { numIP = 1; }  // только один адрес (сеть и хост совпадают)
+		if (prefix == 32) { numIP = 1; }  // С‚РѕР»СЊРєРѕ РѕРґРёРЅ Р°РґСЂРµСЃ (СЃРµС‚СЊ Рё С…РѕСЃС‚ СЃРѕРІРїР°РґР°СЋС‚)
 	
-		else if (prefix == 31) numIP = 2; //  нет широковещательного адреса (RFC 3021)
+		else if (prefix == 31) numIP = 2; //  РЅРµС‚ С€РёСЂРѕРєРѕРІРµС‰Р°С‚РµР»СЊРЅРѕРіРѕ Р°РґСЂРµСЃР° (RFC 3021)
 		else  
-		{   // для остальных случаев: (2^zeroBits - 2)
+		{   // РґР»СЏ РѕСЃС‚Р°Р»СЊРЅС‹С… СЃР»СѓС‡Р°РµРІ: (2^zeroBits - 2)
 			numIP = (zeroBits >= 32) ? 0 : ((1u << zeroBits) - 2);
 		}
 			//numIP = numIP - 2;
 	}  else {
-		// количество IP-адресов в сети: 2^zeroBits
+		// РєРѕР»РёС‡РµСЃС‚РІРѕ IP-Р°РґСЂРµСЃРѕРІ РІ СЃРµС‚Рё: 2^zeroBits
 		numIP = (zeroBits >= 32) ? 0 : (1u << zeroBits);
 	}
 	snprintf(output, outputSize, "%u", numIP);
@@ -224,10 +224,10 @@ void IpToString(DWORD ip, char* output, size_t outputSize)
 //
 //	struct { const char* text; char textIp[32]; } strings[] = 
 //	{
-//		{"Адрес сети: ", ""},
-//		{"Широковещательный адрес: ", ""},
-//		{"Количество IP-aдресов в этой сети: ", ""},
-//		{"Количество узлов текущей сети: ", ""}
+//		{"РђРґСЂРµСЃ СЃРµС‚Рё: ", ""},
+//		{"РЁРёСЂРѕРєРѕРІРµС‰Р°С‚РµР»СЊРЅС‹Р№ Р°РґСЂРµСЃ: ", ""},
+//		{"РљРѕР»РёС‡РµСЃС‚РІРѕ IP-aРґСЂРµСЃРѕРІ РІ СЌС‚РѕР№ СЃРµС‚Рё: ", ""},
+//		{"РљРѕР»РёС‡РµСЃС‚РІРѕ СѓР·Р»РѕРІ С‚РµРєСѓС‰РµР№ СЃРµС‚Рё: ", ""}
 //	};
 //	
 //	SendMessageA(hTxtCntrl, WM_SETTEXT, 0, (LPARAM)"Info:");
@@ -271,27 +271,27 @@ void FillTextControl(HWND hTxtCntrl, DWORD dwIPaddr, int pref, DWORD dwIPmask, D
 
 	strcpy(buffer, "Info:\n");
 
-	// адрес сети
+	// Р°РґСЂРµСЃ СЃРµС‚Рё
 	IpToString(dwIPnet, temp, sizeof(temp));
-	strcat(buffer, "Адрес сети: \t\t\t\t");
+	strcat(buffer, "РђРґСЂРµСЃ СЃРµС‚Рё: \t\t\t\t");
 	strcat(buffer, temp);
 	strcat(buffer, "\n");
 
-	//широковещательный адрес
+	//С€РёСЂРѕРєРѕРІРµС‰Р°С‚РµР»СЊРЅС‹Р№ Р°РґСЂРµСЃ
 	IpToString(BroadcastAddress(dwIPaddr, pref), temp, sizeof(temp));
-	strcat(buffer, "Широковещательный адрес: \t\t");
+	strcat(buffer, "РЁРёСЂРѕРєРѕРІРµС‰Р°С‚РµР»СЊРЅС‹Р№ Р°РґСЂРµСЃ: \t\t");
 	strcat(buffer, temp);
 	strcat(buffer, "\n");
 
-	// количество IP-адресов
+	// РєРѕР»РёС‡РµСЃС‚РІРѕ IP-Р°РґСЂРµСЃРѕРІ
 	NumberIPnetOrHost(dwIPmask, 0, temp, sizeof(temp));
-	strcat(buffer, "Количество IP-aдресов в этой сети: \t");
+	strcat(buffer, "РљРѕР»РёС‡РµСЃС‚РІРѕ IP-aРґСЂРµСЃРѕРІ РІ СЌС‚РѕР№ СЃРµС‚Рё: \t");
 	strcat(buffer, temp);
 	strcat(buffer, "\n");
 
-	// количество  узлов
+	// РєРѕР»РёС‡РµСЃС‚РІРѕ  СѓР·Р»РѕРІ
 	NumberIPnetOrHost(dwIPmask, 1, temp, sizeof(temp));
-	strcat(buffer, "Количество узлов текущей сети: \t");
+	strcat(buffer, "РљРѕР»РёС‡РµСЃС‚РІРѕ СѓР·Р»РѕРІ С‚РµРєСѓС‰РµР№ СЃРµС‚Рё: \t");
 	strcat(buffer, temp);
 
 	SetWindowTextA(hTxtCntrl, buffer);
