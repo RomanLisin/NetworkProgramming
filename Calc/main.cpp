@@ -72,7 +72,7 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		case IDC_EDIT_PREFIX: //IDC_IPMASK:
 		{
-			CHAR sz_prefix[3] = {};
+			CHAR sz_prefix[4] = {};
 			SendMessage(hEditPrefix, WM_GETTEXT, 3, (LPARAM)sz_prefix);
 			DWORD dwPrefix = atoi(sz_prefix);
 			DWORD dwIPmask = ~(0xFFFFFFFF >> dwPrefix);
@@ -103,7 +103,7 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SendMessage(hIPmask, IPM_GETADDRESS, 0, (LPARAM)&dwIPmask);
 			DWORD dwIPprefix = 0;
 			for (DWORD iMask = dwIPmask; iMask & 0x80000000; dwIPprefix++)iMask <<= 1;
-			CHAR sz_prefix[3];
+			CHAR sz_prefix[4];
 			sprintf(sz_prefix, "%i", dwIPprefix);
 			SendMessage(hEditPrefix, WM_SETTEXT, 0, (LPARAM)sz_prefix);
 		}
