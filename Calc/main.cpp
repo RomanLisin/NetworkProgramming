@@ -31,8 +31,8 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		//https://learn.microsoft.com/en-us/windows/win32/controls/udm-setrange
 		SetFocus(GetDlgItem(hwnd, IDC_IPADDRESS));
 
-		AllocConsole();
-		freopen("CONOUT$", "w", stdout);
+		AllocConsole(); // создает новую консоль
+		freopen("CONOUT$", "w", stdout); // перенаправляет стандартный вывод (stdout) в созданную консоль. Без этого вызовы printf или std::cout не будут работать
 	}
 	break;
 	case WM_COMMAND:
@@ -55,9 +55,10 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case IDC_SPIN_PREFIX:  //https://learn.microsoft.com/en-us/windows/win32/controls/udn-deltapos
 		{
 			std::cout << "WM_NOTYFY:IDC_SPIN_PREFIX" << std::endl;
-			DWORD dwPrefix = ((NMUPDOWN*)lParam)->iPos;
-			INT iDelta = ((NMUPDOWN*)lParam)->iDelta;
-			dwPrefix += iDelta;
+			// NMUPDOWN - структура, содержащая информацию о движении спиннера
+			DWORD dwPrefix = ((NMUPDOWN*)lParam)->iPos; // текущее значение спиннера
+			INT iDelta = ((NMUPDOWN*)lParam)->iDelta; // шаг изменения (+1 или -1)
+			dwPrefix += iDelta; // новое значение после изменения
 			//MessageBox(hwnd, "IDC_EDIT_PREFIX_CHANGED", "Info", IDOK);
 			//CHAR sz_prefix[3] = {};
 			//SendMessage(hEditPrefix, WM_GETTEXT, 3, (LPARAM)sz_prefix);
@@ -74,8 +75,8 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 			CHAR sz_prefix[4] = {};
 			SendMessage(hEditPrefix, WM_GETTEXT, 3, (LPARAM)sz_prefix);
-			DWORD dwPrefix = atoi(sz_prefix);
-			DWORD dwIPmask = ~(0xFFFFFFFF >> dwPrefix);
+			DWORD dwPrefix = atoi(sz_prefix);  // преобразует текст в число
+			DWORD dwIPmask = ~(0xFFFFFFFF >> dwPrefix); // Пример для /24: 0xFFFFFFFF >> 24 = 0x000000FF → ~0x000000FF = 0xFFFFFF00.
 			SendMessage(hIPmask, IPM_SETADDRESS, 0, dwIPmask);
 			PrintInfo(hwnd);
 		}
@@ -102,10 +103,10 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 			SendMessage(hIPmask, IPM_GETADDRESS, 0, (LPARAM)&dwIPmask);
 			DWORD dwIPprefix = 0;
-			for (DWORD iMask = dwIPmask; iMask & 0x80000000; dwIPprefix++)iMask <<= 1;
+			for (DWORD iMask = dwIPmask; iMask & 0x80000000; dwIPprefix++)iMask <<= 1; // считает количество ведущих единиц в маске
 			CHAR sz_prefix[4];
-			sprintf(sz_prefix, "%i", dwIPprefix);
-			SendMessage(hEditPrefix, WM_SETTEXT, 0, (LPARAM)sz_prefix);
+			sprintf(sz_prefix, "%i", dwIPprefix); // число -> строка
+			SendMessage(hEditPrefix, WM_SETTEXT, 0, (LPARAM)sz_prefix); // обновляет Edit
 		}
 		break;
 		}
