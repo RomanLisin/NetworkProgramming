@@ -14,6 +14,8 @@ using namespace std;
 
 #define DEFAULT_PORT "27015"
 
+LPSTR FormatLastError(DWORD dwMessageID);
+VOID PrintLastError(DWORD dwMessageID);
 void main()
 {
 
@@ -45,9 +47,80 @@ void main()
 		WSACleanup();
 		return;
 	}
-	cout << "hints:" << endl;
-	cout << "ai_addr:" << hints.ai_addr->sa_data << endl;
+	//cout << "hints:" << endl;
+	//cout << "ai_addr:" << hints.ai_addr->sa_data << endl;
 
+	SOCKET connect_socket = socket(hints.ai_family, hints.ai_socktype, hints.ai_protocol);
+	if (connect_socket == INVALID_SOCKET)
+	{
+		DWORD dwMessageID = WSAGetLastError();
+		//cout << "Error: socket creatin failed with code" << dwMessageID << ":\t";
+		LPSTR szMessage = FormatLastError(dwMessageID);
+		printf("Error %i:%s", dwMessageID, szMessage);
+		LocalFree(szMessage);
+		freeaddrinfo(result);
+		WSACleanup();
+		return;
+	}
+
+	//4) подключаемся к серверу
+	iResult = connect(connect_socket, result->ai_addr, result->ai_addrlen);
+	if (iResult == SOCKET_ERROR)
+	{
+
+		//DWORD dwMessageID = WSAGetLastError();
+		//cout << "Error: Connect to Server failed with code:" << WSAGetLastError() << endl;
+		//LPSTR szBuffer = NULL;// LocalAloc(1024);
+		//FormatMessage
+		//(
+		//	FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		//	NULL,
+		//	dwMessageID,
+		//	MAKELANGID(LANG_NEUTRAL, SUBLANG_RUSSIAN_RUSSIA),
+		//	(LPSTR)&szBuffer,
+		//	0,
+		//	NULL
+		//);
+		//cout << szBuffer << endl;
+		//LocalFree(szBuffer);
+
+		/*DWORD dwMessageID = WSAGetLastError();
+		LPSTR szMessage = FormatLastError(dwMessageID);
+		cout << "Error" << dwMessageID << ": " << szMessage << endl;
+		LocalFree(szMessage);*/
+		PrintLastError(WSAGetLastError());
+		closesocket(connect_socket);
+		freeaddrinfo(result);
+		WSACleanup();
+	}
 	//?) Освобождаем ресурсы WinSock
 	WSACleanup();
+
 }
+	LPSTR FormatLastError(DWORD dwMessageID)
+	{
+		
+		LPSTR szBuffer = NULL;// LocalAloc(1024);
+		FormatMessage
+		(
+			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL,
+			dwMessageID,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_RUSSIAN_RUSSIA),
+			(LPSTR)&szBuffer,
+			0,
+			NULL
+
+		);
+		//cout << szBuffer << endl;
+		//LocalFree(szBuffer);
+		return szBuffer;
+	}
+	VOID PrintLastError(DWORD dwMessageID)
+	{
+		//DWORD dwMessageID = WSAGetLastError();
+		LPSTR szMessage = FormatLastError(dwMessageID);
+		//cout << "Error" << dwMessageID << ": " << szMessage << endl;
+		printf("Error %i:%s",dwMessageID, szMessage);
+		LocalFree(szMessage);
+	}
