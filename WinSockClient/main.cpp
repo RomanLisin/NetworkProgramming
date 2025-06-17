@@ -6,7 +6,7 @@
 #include<Winsock2.h>
 #include<WS2tcpip.h>
 #include<iphlpapi.h>
-#include<stdint.h>
+#include<stdio.h>
 #include<iostream>
 using namespace std;
 
@@ -55,9 +55,11 @@ void main()
 	{
 		DWORD dwMessageID = WSAGetLastError();
 		//cout << "Error: socket creatin failed with code" << dwMessageID << ":\t";
-		LPSTR szMessage = FormatLastError(dwMessageID);
+		/*LPSTR szMessage = FormatLastError(dwMessageID);
 		printf("Error %i:%s", dwMessageID, szMessage);
-		LocalFree(szMessage);
+		LocalFree(szMessage);*/
+		LPSTR szBuffer = FormatLastError(dwMessageID);
+
 		freeaddrinfo(result);
 		WSACleanup();
 		return;
@@ -100,7 +102,7 @@ void main()
 	LPSTR FormatLastError(DWORD dwMessageID)
 	{
 		
-		LPSTR szBuffer = NULL;// LocalAloc(1024);
+		LPSTR szBuffer = NULL;
 		FormatMessage
 		(
 			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
