@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinSockClient", "WinSockCli
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinSockSever", "WinSockSever\WinSockSever.vcxproj", "{E9B95341-50EF-4D25-AA8F-58B5A87D1906}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FormatLastError", "FormatLastError\FormatLastError.vcxproj", "{587C5213-44AE-4624-A688-2125D1CD661B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -41,6 +43,14 @@ Global
 		{E9B95341-50EF-4D25-AA8F-58B5A87D1906}.Release|x64.Build.0 = Release|x64
 		{E9B95341-50EF-4D25-AA8F-58B5A87D1906}.Release|x86.ActiveCfg = Release|Win32
 		{E9B95341-50EF-4D25-AA8F-58B5A87D1906}.Release|x86.Build.0 = Release|Win32
+		{587C5213-44AE-4624-A688-2125D1CD661B}.Debug|x64.ActiveCfg = Debug|x64
+		{587C5213-44AE-4624-A688-2125D1CD661B}.Debug|x64.Build.0 = Debug|x64
+		{587C5213-44AE-4624-A688-2125D1CD661B}.Debug|x86.ActiveCfg = Debug|Win32
+		{587C5213-44AE-4624-A688-2125D1CD661B}.Debug|x86.Build.0 = Debug|Win32
+		{587C5213-44AE-4624-A688-2125D1CD661B}.Release|x64.ActiveCfg = Release|x64
+		{587C5213-44AE-4624-A688-2125D1CD661B}.Release|x64.Build.0 = Release|x64
+		{587C5213-44AE-4624-A688-2125D1CD661B}.Release|x86.ActiveCfg = Release|Win32
+		{587C5213-44AE-4624-A688-2125D1CD661B}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
