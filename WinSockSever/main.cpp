@@ -85,9 +85,12 @@ void main()
 		return;
 	}
 
+	sockaddr_storage client_addr{}; // хранилище для ip
+	socklen_t client_len = sizeof(client_addr);
+
 	//6) Принимаем запросы на соединение от клиентов:
 	cout << "Wait for clients..." << endl;
-	SOCKET client_socket = accept(listen_socket, NULL, NULL);
+	SOCKET client_socket = accept(listen_socket,(sockaddr*)&client_addr, & client_len); // NULL, NULL);
 	if (client_socket == INVALID_SOCKET)
 	{
 		cout << "accept() failed with ";
@@ -97,6 +100,12 @@ void main()
 		WSACleanup();
 		return;
 	}
+
+	CHAR client_ip[INET_ADDRSTRLEN];
+	unsigned short client_port;
+	sockaddr_in* ip = (sockaddr_in*)&client_addr;
+	inet_ntop(AF_INET, &ip->sin_addr, client_ip, sizeof(client_ip));
+	client_port = ntohs(ip->sin_port);
 
 	//7) Получение и отправка данных:
 	CHAR recvbuffer[DEFAULT_BUFFER_LENGTH] = {};
@@ -121,6 +130,7 @@ void main()
 			 PrintLastError(WSAGetLastError());
 		}
 	} while (iResult > 0);
+	cout << "Client ip-address: " << client_ip << ":" << client_port << endl;
 	// ? Освобождение ресурсов WinSiock:
 	closesocket(client_socket);
 	closesocket(listen_socket);
