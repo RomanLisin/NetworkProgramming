@@ -21,6 +21,19 @@ using namespace std;
 #define DEFAULT_PORT "27015"
 #define DEFAULT_BUFFER_LENGTH 1500
 
+atomic<bool> g_running(true); // атомарный безопасный бул
+
+// Обработчик закрытия консоли, чтобы порты  самостоятельно не открывались
+BOOL WINAPI ConsoleHandler(DWORD signal)
+{
+	if (signal == CTRL_C_EVENT || signal == CTRL_CLOSE_EVENT)
+	{
+		g_running = false;
+		return TRUE;
+	}
+	return FALSE;
+}
+
 mutex console_mutex;
 
 void main()
@@ -89,54 +102,69 @@ void main()
 		return;
 	}
 
-	sockaddr_storage client_addr{}; // хранилище для ip
-	socklen_t client_len = sizeof(client_addr);
 
 	//6) Принимаем запросы на соединение от клиентов:
 	cout << "Wait for clients..." << endl;
-	SOCKET client_socket = accept(listen_socket,(sockaddr*)&client_addr, & client_len); // NULL, NULL);
-	if (client_socket == INVALID_SOCKET)
+	
+	// Установка обработчика
+	SetConsoleCtrlHandler(ConsoleHandler, TRUE);
+	while (g_running)
 	{
-		cout << "accept() failed with ";
-		PrintLastError(WSAGetLastError());
-		closesocket(listen_socket);
-		freeaddrinfo(result);
-		WSACleanup();
-		return;
-	}
+		sockaddr_storage client_addr{}; // хранилище для ip
+		socklen_t client_len = sizeof(client_addr);
 
-	CHAR client_ip[INET_ADDRSTRLEN];
-	unsigned short client_port;
-	sockaddr_in* ip = (sockaddr_in*)&client_addr;
-	inet_ntop(AF_INET, &ip->sin_addr, client_ip, sizeof(client_ip));
-	client_port = ntohs(ip->sin_port);
-
-	//7) Получение и отправка данных:
-	CHAR recvbuffer[DEFAULT_BUFFER_LENGTH] = {};
-	do
-	{
-		iResult = recv(client_socket, recvbuffer, DEFAULT_BUFFER_LENGTH, 0); // возвращает количество байт
-		if (iResult > 0)
+		SOCKET client_socket = accept(listen_socket, (sockaddr*)&client_addr, &client_len); // NULL, NULL);
+		if (!g_running) break; 
+		if (client_socket == INVALID_SOCKET)
 		{
-			cout << "Received Bytes: " << iResult << ", Message: " << recvbuffer << endl;
-			if (send(client_socket, recvbuffer, strlen(recvbuffer), 0) == SOCKET_ERROR)
-			{
-				cout << "send() failed with ";
-				PrintLastError(WSAGetLastError());
-				closesocket(client_socket);
-				break;
-			}
+			cout << "accept() failed with ";
+			PrintLastError(WSAGetLastError());
+			closesocket(listen_socket);
+			freeaddrinfo(result);
+			WSACleanup();
+			return;
 		}
+
+		CHAR client_ip[INET_ADDRSTRLEN];
+		unsigned short client_port;
+		sockaddr_in* ip = (sockaddr_in*)&client_addr;
+		inet_ntop(AF_INET, &ip->sin_addr, client_ip, sizeof(client_ip));
+		client_port = ntohs(ip->sin_port);
+
+		//7) Получение и отправка данных:
+		// обработка клиента в отдельном потоке
+		thread([client_socket]()
+			{
+				CHAR recvbuffer[DEFAULT_BUFFER_LENGTH];// = {};
+
+		while (g_running)//do
+		{
+			int iResult = recv(client_socket, recvbuffer, DEFAULT_BUFFER_LENGTH, 0); // возвращает количество байт
+			if (iResult <= 0) break;
+			if (iResult > 0)
+			{
+				cout << "Received Bytes: " << iResult << ", Message: " << recvbuffer << endl;
+				if (send(client_socket, recvbuffer, strlen(recvbuffer), 0) == SOCKET_ERROR)
+				{
+					cout << "send() failed with ";
+					PrintLastError(WSAGetLastError());
+					/*closesocket(client_socket);
+					break;*/
+					continue;
+				}
+			}
 			else if (iResult == 0) cout << "Connection closing..." << endl;
 			else
-		{
-			cout << "recv() failed with ";
-			 PrintLastError(WSAGetLastError());
-		}
-	} while (iResult > 0);
-	cout << "Client ip-address: " << client_ip << ":" << client_port << endl;
+			{
+				cout << "recv() failed with ";
+				PrintLastError(WSAGetLastError());
+			}
+		} //while (iResult > 0);
+		closesocket(client_socket);
+		}).detach();
+		cout << "Client ip-address: " << client_ip << ":" << client_port << endl;
+	}
 	// ? Освобождение ресурсов WinSiock:
-	closesocket(client_socket);
 	closesocket(listen_socket);
 	freeaddrinfo(result);
 	WSACleanup();
