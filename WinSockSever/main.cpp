@@ -10,6 +10,8 @@
 #include<stdio.h>
 #include<iostream>
 #include<FormatLastError.h>
+#include<thread>
+#include<mutex>
 using namespace std;
 
 
@@ -18,6 +20,8 @@ using namespace std;
 
 #define DEFAULT_PORT "27015"
 #define DEFAULT_BUFFER_LENGTH 1500
+
+mutex console_mutex;
 
 void main()
 {
