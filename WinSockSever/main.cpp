@@ -103,9 +103,9 @@ void main()
 	while (g_running)
 	{
 		sockaddr_storage client_addr{}; // хранилище для ip
-		socklen_t client_len = sizeof(client_addr);
+		socklen_t clients_len = sizeof(client_addr);
 
-		SOCKET client_socket = accept(listen_socket, (sockaddr*)&client_addr, &client_len); // NULL, NULL);
+		SOCKET client_socket = accept(listen_socket, (sockaddr*)&client_addr, &clients_len); // NULL, NULL);
 		if (!g_running) break; 
 		if (client_socket == INVALID_SOCKET)
 		{
@@ -129,8 +129,10 @@ void main()
 
 		//7) Получение и отправка данных:
 		// обработка клиента в отдельном потоке
-		std::lock_guard<std::mutex> lock(console_mutex);  //Блокирует мьютекс для безопасного вывода в консоль
-		cout << "Client ip-address: " << strClientIP << ":" << strClientPort << endl;
+		{
+			std::lock_guard<std::mutex> lock(console_mutex);  //Блокирует мьютекс для безопасного вывода в консоль
+			cout << "Client ip-address: " << strClientIP << ":" << strClientPort << endl;
+		}
 		thread([client_socket]()
 			{
 				CHAR recvbuffer[DEFAULT_BUFFER_LENGTH] = {};

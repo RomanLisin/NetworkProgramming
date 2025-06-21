@@ -8,4 +8,4 @@ LPSTR FormatLastError(DWORD dwMessageID);
 VOID PrintLastError(DWORD dwMessageID);
 
 extern std::atomic<bool> g_running; // extern нужен если возникает ошибка  LNK1169
-BOOL WINAPI ConsoleClosed(DWORD signal);
+BOOL WINAPI ConsoleClosed(DWORD signal); // работает с сервером, с клиентом не успевает отправить серверу сообщение о закрытии
