@@ -18,6 +18,8 @@ using namespace std;
 #define DEFAULT_PORT			 "27015"
 #define DEFAULT_BUFFER_LENGTH    1500  //  Ethernet кадр 1466-1470 байт
 
+std::atomic<bool> g_running(true);
+
 void main()
 {
 
@@ -101,7 +103,7 @@ void main()
 
 	//5) отправка и получение данных с Сервера:
 	CONST CHAR sendbuffer[] = "Hello Server, I am client";
-	CHAR recvbuffer[DEFAULT_BUFFER_LENGTH] = {};
+
 	iResult = send(connect_socket, sendbuffer, sizeof(sendbuffer), 0);
 	if (iResult == SOCKET_ERROR)
 	{
@@ -112,16 +114,54 @@ void main()
 		return;
 	}
 
-	iResult = shutdown(connect_socket, SD_SEND);
+	CHAR recvbuffer[DEFAULT_BUFFER_LENGTH] = {};
+	CHAR inputBuffer[DEFAULT_BUFFER_LENGTH] = {};
+	//iResult = shutdown(connect_socket, SD_SEND);
 	if (iResult == SOCKET_ERROR)PrintLastError(WSAGetLastError());
+	SetConsoleCtrlHandler(ConsoleClosed, TRUE); // закрывает соединение при закрытии консоли
 	do
 	{
 		iResult = recv(connect_socket, recvbuffer, DEFAULT_BUFFER_LENGTH, 0);
-		if (iResult > 0)cout << "Receved bytes: " << iResult << ", Message: " << recvbuffer << endl;
+		if (iResult > 0)
+		{
+			recvbuffer[iResult] = '\0'; // добавляем нуль-терминатор
+			cout << "Receved bytes: " << iResult << ", Message: " << recvbuffer << endl; 
+		}
 		else if (iResult == 0) cout << "Connection closing" << endl;
-		else PrintLastError(WSAGetLastError());
-	} while (iResult > 0);
+		else {
+			PrintLastError(WSAGetLastError()); break;
+		}
+		// Ввод сообщения для отправки
+		cout << "Enter message (or 'q' to quit): ";
+		cin.getline(inputBuffer, DEFAULT_BUFFER_LENGTH);
 
+		// Проверка на выход
+		if (strcmp(inputBuffer, "q") == 0)
+		{
+			cout << "Closing connection..." << endl;
+			break;
+		}
+
+		// Отправка сообщения серверу
+		iResult = send(connect_socket, inputBuffer, (int)strlen(inputBuffer) + 1, 0);
+		if (iResult == SOCKET_ERROR)
+		{
+			PrintLastError(WSAGetLastError());
+			break;
+		}
+		if (!g_running)
+		{
+			recvbuffer[0] = 'q'; recvbuffer[1] = '\0';
+			iResult = send(connect_socket, recvbuffer, (int)strlen(recvbuffer) + 1, 0);
+			Sleep(50); // ждем отправки
+			if (iResult == SOCKET_ERROR)
+			{
+				PrintLastError(WSAGetLastError());
+				break;
+			}
+		}
+	} while (g_running);// iResult > 0);
+	
 	// 6) закрываем соединение
 	iResult = shutdown(connect_socket, SD_SEND);
 
@@ -132,7 +172,7 @@ void main()
 
 	//7) Освобождаем ресурсы WinSock
 	closesocket(connect_socket);
-	FreeAddrInfo(result);
+	freeaddrinfo(result);//FreeAddrInfo(result);
 
 		//?) Освобождаем ресурсы WinSock
 	WSACleanup();

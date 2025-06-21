@@ -21,18 +21,10 @@ using namespace std;
 #define DEFAULT_PORT "27015"
 #define DEFAULT_BUFFER_LENGTH 1500
 
-atomic<bool> g_running(true); // атомарный безопасный бул
+std::atomic<bool> g_running(true);
 
-// Обработчик закрытия консоли, чтобы порты  самостоятельно не открывались
-BOOL WINAPI ConsoleHandler(DWORD signal)
-{
-	if (signal == CTRL_C_EVENT || signal == CTRL_CLOSE_EVENT)
-	{
-		g_running = false;
-		return TRUE;
-	}
-	return FALSE;
-}
+LPSTR strClientIP = {};
+LPSTR strClientPort = {};
 
 mutex console_mutex;
 
@@ -107,7 +99,7 @@ void main()
 	cout << "Wait for clients..." << endl;
 	
 	// Установка обработчика
-	SetConsoleCtrlHandler(ConsoleHandler, TRUE);
+	SetConsoleCtrlHandler(ConsoleClosed, TRUE);
 	while (g_running)
 	{
 		sockaddr_storage client_addr{}; // хранилище для ip
@@ -126,24 +118,32 @@ void main()
 		}
 
 		CHAR client_ip[INET_ADDRSTRLEN];
+		CHAR clientPort[10];
 		unsigned short client_port;
 		sockaddr_in* ip = (sockaddr_in*)&client_addr;
 		inet_ntop(AF_INET, &ip->sin_addr, client_ip, sizeof(client_ip));
 		client_port = ntohs(ip->sin_port);
+		strClientIP = client_ip;
+		sprintf(clientPort, "%hu" ,client_port); // для преобразования в LPSTR
+		strClientPort = clientPort;
 
 		//7) Получение и отправка данных:
 		// обработка клиента в отдельном потоке
+		std::lock_guard<std::mutex> lock(console_mutex);  //Блокирует мьютекс для безопасного вывода в консоль
+		cout << "Client ip-address: " << strClientIP << ":" << strClientPort << endl;
 		thread([client_socket]()
 			{
-				CHAR recvbuffer[DEFAULT_BUFFER_LENGTH];// = {};
+				CHAR recvbuffer[DEFAULT_BUFFER_LENGTH] = {};
 
 		while (g_running)//do
 		{
 			int iResult = recv(client_socket, recvbuffer, DEFAULT_BUFFER_LENGTH, 0); // возвращает количество байт
-			if (iResult <= 0) break;
+			if (iResult < 0) break;
 			if (iResult > 0)
 			{
-				cout << "Received Bytes: " << iResult << ", Message: " << recvbuffer << endl;
+		{
+		}
+				cout << "Received Bytes: " << iResult << ", Message: " << recvbuffer << ":"<< strClientPort << endl;
 				if (send(client_socket, recvbuffer, strlen(recvbuffer), 0) == SOCKET_ERROR)
 				{
 					cout << "send() failed with ";
@@ -153,7 +153,7 @@ void main()
 					continue;
 				}
 			}
-			else if (iResult == 0) cout << "Connection closing..." << endl;
+			else if (iResult == 0) { cout << "Client with port: " << strClientPort << " connection closing..." << endl; break; }
 			else
 			{
 				cout << "recv() failed with ";
@@ -162,7 +162,6 @@ void main()
 		} //while (iResult > 0);
 		closesocket(client_socket);
 		}).detach();
-		cout << "Client ip-address: " << client_ip << ":" << client_port << endl;
 	}
 	// ? Освобождение ресурсов WinSiock:
 	closesocket(listen_socket);

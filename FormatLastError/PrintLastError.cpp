@@ -1,5 +1,6 @@
 #include"FormatLastError.h"
 
+
 LPSTR FormatLastError(DWORD dwMessageID)
 {
 
@@ -26,4 +27,16 @@ VOID PrintLastError(DWORD dwMessageID)
 	//cout << "Error" << dwMessageID << ": " << szMessage << endl;
 	printf("Error %i:%s", dwMessageID, szMessage);
 	LocalFree(szMessage);
+}
+
+// Обработчик закрытия консоли, чтобы порты  самостоятельно не открывались
+BOOL WINAPI ConsoleClosed(DWORD signal)
+{
+	if (signal == CTRL_C_EVENT || signal == CTRL_CLOSE_EVENT)
+	{
+		g_running = false;
+		return TRUE;
+		//Sleep(1000); // чтобы успеть отправить 'q'  после закрытия клиента
+	}
+	return FALSE;
 }
