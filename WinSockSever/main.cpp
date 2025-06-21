@@ -23,10 +23,9 @@ using namespace std;
 
 std::atomic<bool> g_running(true);
 
-LPSTR strClientIP = {};
-LPSTR strClientPort = {};
-
 mutex console_mutex;
+
+void Client(SOCKET client_socket);
 
 void main()
 {
@@ -102,11 +101,10 @@ void main()
 	SetConsoleCtrlHandler(ConsoleClosed, TRUE);
 	while (g_running)
 	{
-		sockaddr_storage client_addr{}; // хранилище для ip
-		socklen_t clients_len = sizeof(client_addr);
+		sockaddr_in client_addr{}; // хранилище для ip
+		INT clients_len = sizeof(client_addr);
 
 		SOCKET client_socket = accept(listen_socket, (sockaddr*)&client_addr, &clients_len); // NULL, NULL);
-		if (!g_running) break; 
 		if (client_socket == INVALID_SOCKET)
 		{
 			cout << "accept() failed with ";
@@ -116,54 +114,10 @@ void main()
 			WSACleanup();
 			return;
 		}
+		//if (!g_running) break; 
 
-		CHAR client_ip[INET_ADDRSTRLEN];
-		CHAR clientPort[10];
-		unsigned short client_port;
-		sockaddr_in* ip = (sockaddr_in*)&client_addr;
-		inet_ntop(AF_INET, &ip->sin_addr, client_ip, sizeof(client_ip));
-		client_port = ntohs(ip->sin_port);
-		strClientIP = client_ip;
-		sprintf(clientPort, "%hu" ,client_port); // для преобразования в LPSTR
-		strClientPort = clientPort;
-
-		//7) Получение и отправка данных:
-		// обработка клиента в отдельном потоке
-		{
-			std::lock_guard<std::mutex> lock(console_mutex);  //Блокирует мьютекс для безопасного вывода в консоль
-			cout << "Client ip-address: " << strClientIP << ":" << strClientPort << endl;
-		}
-		thread([client_socket]()
-			{
-				CHAR recvbuffer[DEFAULT_BUFFER_LENGTH] = {};
-
-		while (g_running)//do
-		{
-			int iResult = recv(client_socket, recvbuffer, DEFAULT_BUFFER_LENGTH, 0); // возвращает количество байт
-			if (iResult < 0) break;
-			if (iResult > 0)
-			{
-		{
-		}
-				cout << "Received Bytes: " << iResult << ", Message: " << recvbuffer << ":"<< strClientPort << endl;
-				if (send(client_socket, recvbuffer, strlen(recvbuffer), 0) == SOCKET_ERROR)
-				{
-					cout << "send() failed with ";
-					PrintLastError(WSAGetLastError());
-					/*closesocket(client_socket);
-					break;*/
-					continue;
-				}
-			}
-			else if (iResult == 0) { cout << "Client with port: " << strClientPort << " connection closing..." << endl; break; }
-			else
-			{
-				cout << "recv() failed with ";
-				PrintLastError(WSAGetLastError());
-			}
-		} //while (iResult > 0);
-		closesocket(client_socket);
-		}).detach();
+		std::thread client_thread(Client, client_socket);
+		client_thread.detach(); // отсоединяем поток
 	}
 	// ? Освобождение ресурсов WinSiock:
 	closesocket(listen_socket);
@@ -171,4 +125,62 @@ void main()
 	WSACleanup();
 
 
+}
+void Client(SOCKET client_socket)
+{
+	CHAR recvbuffer[DEFAULT_BUFFER_LENGTH] = {};
+	INT bytes_received;
+
+	sockaddr_in client_addr{}; // хранилище для ip
+	//socklen_t clients_len = sizeof(client_addr);
+	INT addr_len = sizeof(client_addr);
+	getpeername(client_socket, (sockaddr*)&client_addr, &addr_len); // - получает адресную информацию о подключённом клиенте
+
+	CHAR client_ip[INET_ADDRSTRLEN];
+	CHAR strClientPort[10];
+	unsigned short client_port = ntohs(client_addr.sin_port);
+	sockaddr_in* ip = (sockaddr_in*)&client_addr;
+	inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, sizeof(client_ip));
+	snprintf(strClientPort, sizeof(strClientPort), "%hu" ,client_port); // для преобразования в LPSTR
+	//strClientPort = clientPort;
+
+		//7) Получение и отправка данных:
+		// обработка клиента в отдельном потоке
+		{
+			std::lock_guard<std::mutex> lock(console_mutex);  //Блокирует мьютекс для безопасного вывода в консоль
+			cout << "Client ip-address: " << client_ip << ":" << strClientPort << endl;
+		}
+
+	while (g_running)//do
+	{
+		bytes_received = recv(client_socket, recvbuffer, DEFAULT_BUFFER_LENGTH, 0); // возвращает количество байт
+		if (bytes_received < 0) break;
+		if (bytes_received > 0)
+		{
+			{
+				std::lock_guard<std::mutex> lock(console_mutex);
+				cout << "Received Bytes: " << bytes_received << ", Message: " << recvbuffer << ":"<< strClientPort << endl;
+			}
+			if (send(client_socket, recvbuffer, strlen(recvbuffer), 0) == SOCKET_ERROR)
+			{
+				cout << "send() failed with ";
+				PrintLastError(WSAGetLastError());
+				/*closesocket(client_socket);
+				break;*/
+				continue;
+			}
+		}
+		else if (bytes_received == 0) 
+		{
+			std::lock_guard<std::mutex> lock(console_mutex);
+			cout << "Client with port: " << strClientPort << " connection closing..." << endl;
+			break; 
+		}
+		else
+		{
+			cout << "recv() failed with ";
+			PrintLastError(WSAGetLastError());
+		}
+	} //while (iResult > 0);
+	closesocket(client_socket);
 }
