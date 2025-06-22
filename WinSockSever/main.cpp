@@ -19,7 +19,7 @@ using namespace std;
 #define DEFAULT_PORT "27015"
 #define DEFAULT_BUFFER_LENGTH 1500
 
-VOID ClientHandle(SOCKET client_socket);
+VOID ClientHandler(SOCKET client_socket);
 
 void main()
 {
@@ -88,6 +88,11 @@ void main()
 	}
 
 	//6) Принимаем запросы на соединение от клиентов:
+	CONST INT MAX_CONNECTIONS = 5;
+	SOCKET sockets[MAX_CONNECTIONS] = {};
+	DWORD dwThreadIDs[MAX_CONNECTIONS] = {};
+	HANDLE hThreads[MAX_CONNECTIONS] = {};
+	INT i = 0;
 	cout << "Wait for clients..." << endl;
 	do
 	{
@@ -101,8 +106,25 @@ void main()
 			WSACleanup();
 			return;
 		}
-		ClientHandle(client_socket); // в потоке можем запустить только функцию
+		sockets[i] = client_socket;
+		hThreads[i] = CreateThread
+		(
+			NULL,
+			0,
+			(LPTHREAD_START_ROUTINE)ClientHandler,
+			(LPVOID)sockets[i],
+			0,
+			&dwThreadIDs[i]
+		);
+		i++;
+		//ClientHandle(client_socket); // в потоке можем запустить только функцию
 	} while (true);
+	WaitForMultipleObjects(MAX_CONNECTIONS, hThreads, TRUE, INFINITE);
+	for (int i = 0; i < MAX_CONNECTIONS; i++)
+	{
+		CloseHandle(hThreads[i]);
+		closesocket(sockets[i]);
+	}
 	// ? Освобождение ресурсов WinSiock:
 	closesocket(listen_socket);
 	freeaddrinfo(result);
@@ -111,7 +133,7 @@ void main()
 
 }
 
-VOID ClientHandle(SOCKET client_socket)
+VOID ClientHandler(SOCKET client_socket)
 {
 		//7) Получение и отправка данных:
 			INT iResult = 0;
