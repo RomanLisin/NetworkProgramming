@@ -23,7 +23,7 @@ CONST CHAR g_OVERFLOW[DEFAULT_BUFFER_LENGTH] = "Sory, too many connection, try a
 void main()
 {
 
-	setlocale(LC_ALL, "Russian");
+	setlocale(LC_ALL, "");
 	cout << "WinSock Client" << endl;
 
 	//1)  Инициализация WinSock

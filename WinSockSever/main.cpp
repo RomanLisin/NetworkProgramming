@@ -30,7 +30,11 @@ VOID ClientHandler(SOCKET client_socket);
 
 void main()
 {
-	setlocale(LC_ALL, "");
+	//setlocale(LC_ALL, "");
+	// Установка локали и кодировки консоли
+	setlocale(LC_ALL, "Russian_Russia.1251");
+	SetConsoleOutputCP(1251);
+	SetConsoleCP(1251);
 
 	//1) Инициализация WinSock:
 	WSADATA wsaData;
