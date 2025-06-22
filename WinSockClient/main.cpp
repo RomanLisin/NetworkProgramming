@@ -100,27 +100,31 @@ void main()
 	}
 
 	//5) отправка и получение данных с Сервера:
-	CONST CHAR sendbuffer[] = "Hello Server, I am client";
+	CHAR sendbuffer[DEFAULT_BUFFER_LENGTH] = "Hello Server, I am client";
 	CHAR recvbuffer[DEFAULT_BUFFER_LENGTH] = {};
-	iResult = send(connect_socket, sendbuffer, sizeof(sendbuffer), 0);
-	if (iResult == SOCKET_ERROR)
-	{
-		PrintLastError(WSAGetLastError());
-		closesocket(connect_socket);
-		freeaddrinfo(result);
-		WSACleanup();
-		return;
-	}
-
-	iResult = shutdown(connect_socket, SD_SEND);
-	if (iResult == SOCKET_ERROR)PrintLastError(WSAGetLastError());
 	do
 	{
-		iResult = recv(connect_socket, recvbuffer, DEFAULT_BUFFER_LENGTH, 0);
-		if (iResult > 0)cout << "Receved bytes: " << iResult << ", Message: " << recvbuffer << endl;
-		else if (iResult == 0) cout << "Connection closing" << endl;
-		else PrintLastError(WSAGetLastError());
-	} while (iResult > 0);
+		iResult = send(connect_socket, sendbuffer, sizeof(sendbuffer), 0);
+		if (iResult == SOCKET_ERROR)
+		{
+			PrintLastError(WSAGetLastError());
+			closesocket(connect_socket);
+			freeaddrinfo(result);
+			WSACleanup();
+			return;
+		}
+
+		//iResult = shutdown(connect_socket, SD_SEND);
+		//if (iResult == SOCKET_ERROR)PrintLastError(WSAGetLastError());
+			iResult = recv(connect_socket, recvbuffer, DEFAULT_BUFFER_LENGTH, 0);
+			if (iResult > 0)cout << "Receved bytes: " << iResult << ", Message: " << recvbuffer << endl;
+			else if (iResult == 0) cout << "Connection closing" << endl;
+			else PrintLastError(WSAGetLastError());
+		cout << "Введите сообщения: "; 
+		SetConsoleCP(1251);
+		cin.getline(sendbuffer, DEFAULT_BUFFER_LENGTH);
+		SetConsoleCP(866);
+	} while (iResult > 0 && strcmp(sendbuffer, "exit"));
 
 	// 6) закрываем соединение
 	iResult = shutdown(connect_socket, SD_SEND);
