@@ -116,6 +116,8 @@ void main()
 		}
 		//if (!g_running) break; 
 
+		//7) Получение и отправка данных:
+		// обработка клиента в отдельном потоке
 		std::thread client_thread(Client, client_socket);
 		client_thread.detach(); // отсоединяем поток
 	}
@@ -142,10 +144,7 @@ void Client(SOCKET client_socket)
 	sockaddr_in* ip = (sockaddr_in*)&client_addr;
 	inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, sizeof(client_ip));
 	snprintf(strClientPort, sizeof(strClientPort), "%hu" ,client_port); // для преобразования в LPSTR
-	//strClientPort = clientPort;
 
-		//7) Получение и отправка данных:
-		// обработка клиента в отдельном потоке
 		{
 			std::lock_guard<std::mutex> lock(console_mutex);  //Блокирует мьютекс для безопасного вывода в консоль
 			cout << "Client ip-address: " << client_ip << ":" << strClientPort << endl;
