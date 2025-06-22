@@ -19,6 +19,8 @@ using namespace std;
 #define DEFAULT_PORT "27015"
 #define DEFAULT_BUFFER_LENGTH 1500
 
+VOID ClientHandle(SOCKET client_socket);
+
 void main()
 {
 	setlocale(LC_ALL, "");
@@ -87,45 +89,54 @@ void main()
 
 	//6) Принимаем запросы на соединение от клиентов:
 	cout << "Wait for clients..." << endl;
-	SOCKET client_socket = accept(listen_socket, NULL, NULL);
-	if (client_socket == INVALID_SOCKET)
-	{
-		cout << "accept() failed with ";
-		PrintLastError(WSAGetLastError());
-		closesocket(listen_socket);
-		freeaddrinfo(result);
-		WSACleanup();
-		return;
-	}
-
-	//7) Получение и отправка данных:
-	CHAR recvbuffer[DEFAULT_BUFFER_LENGTH] = {};
 	do
 	{
-		iResult = recv(client_socket, recvbuffer, DEFAULT_BUFFER_LENGTH, 0); // возвращает количество байт
-		if (iResult > 0)
+		SOCKET client_socket = accept(listen_socket, NULL, NULL);
+		if (client_socket == INVALID_SOCKET)
 		{
-			cout << "Received Bytes: " << iResult << ", Message: " << recvbuffer << endl;
-			if (send(client_socket, recvbuffer, strlen(recvbuffer), 0) == SOCKET_ERROR)
-			{
-				cout << "send() failed with ";
-				PrintLastError(WSAGetLastError());
-				closesocket(client_socket);
-				break;
-			}
+			cout << "accept() failed with ";
+			PrintLastError(WSAGetLastError());
+			closesocket(listen_socket);
+			freeaddrinfo(result);
+			WSACleanup();
+			return;
 		}
-			else if (iResult == 0) cout << "Connection closing..." << endl;
-			else
-		{
-			cout << "recv() failed with ";
-			 PrintLastError(WSAGetLastError());
-		}
-	} while (iResult > 0);
+		ClientHandle(client_socket); // в потоке можем запустить только функцию
+	} while (true);
 	// ? Освобождение ресурсов WinSiock:
-	closesocket(client_socket);
 	closesocket(listen_socket);
 	freeaddrinfo(result);
 	WSACleanup();
 
+
+}
+
+VOID ClientHandle(SOCKET client_socket)
+{
+		//7) Получение и отправка данных:
+			INT iResult = 0;
+		CHAR recvbuffer[DEFAULT_BUFFER_LENGTH] = {};
+		do
+		{
+			iResult = recv(client_socket, recvbuffer, DEFAULT_BUFFER_LENGTH, 0); // возвращает количество байт
+			if (iResult > 0)
+			{
+				cout << "Received Bytes: " << iResult << ", Message: " << recvbuffer << endl;
+				if (send(client_socket, recvbuffer, strlen(recvbuffer), 0) == SOCKET_ERROR)
+				{
+					cout << "send() failed with ";
+					PrintLastError(WSAGetLastError());
+					closesocket(client_socket);
+					break;
+				}
+			}
+			else if (iResult == 0) cout << "Connection closing..." << endl;
+			else
+			{
+				cout << "recv() failed with ";
+				PrintLastError(WSAGetLastError());
+			}
+		} while (iResult > 0);
+	closesocket(client_socket);
 
 }
