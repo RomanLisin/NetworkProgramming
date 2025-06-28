@@ -9,6 +9,7 @@
 #include<stdio.h>
 #include<iostream>
 #include<FormatLastError.h>
+#include<thread>
 using namespace std;
 
 #pragma comment(lib, "Ws2_32.lib")
@@ -19,6 +20,8 @@ using namespace std;
 #define DEFAULT_BUFFER_LENGTH    1500  //  Ethernet кадр 1466-1470 байт
 
 CONST CHAR g_OVERFLOW[DEFAULT_BUFFER_LENGTH] = "Sory, too many connection, try again later: ";
+
+VOID Receive(SOCKET connect_socket);
 
 void main()
 {
@@ -73,33 +76,15 @@ void main()
 	iResult = connect(connect_socket, result->ai_addr, result->ai_addrlen);
 	if (iResult == SOCKET_ERROR)
 	{
-
-		//DWORD dwMessageID = WSAGetLastError();
-		//cout << "Error: Connect to Server failed with code:" << WSAGetLastError() << endl;
-		//LPSTR szBuffer = NULL;// LocalAloc(1024);
-		//FormatMessage
-		//(
-		//	FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-		//	NULL,
-		//	dwMessageID,
-		//	MAKELANGID(LANG_NEUTRAL, SUBLANG_RUSSIAN_RUSSIA),
-		//	(LPSTR)&szBuffer,
-		//	0,
-		//	NULL
-		//);
-		//cout << szBuffer << endl;
-		//LocalFree(szBuffer);
-
-		/*DWORD dwMessageID = WSAGetLastError();
-		LPSTR szMessage = FormatLastError(dwMessageID);
-		cout << "Error" << dwMessageID << ": " << szMessage << endl;
-		LocalFree(szMessage);*/
 		PrintLastError(WSAGetLastError());
 		closesocket(connect_socket);
 		freeaddrinfo(result);
 		WSACleanup();
 		return;
 	}
+
+	thread receiver(Receive, connect_socket);
+	receiver.detach();
 
 	//5) отправка и получение данных с Сервера:
 	CHAR sendbuffer[DEFAULT_BUFFER_LENGTH] = "Hello Server, I am client";
@@ -128,9 +113,9 @@ void main()
 				system("PAUSE");
 				break;
 			}
+		SetConsoleCP(1251);
 		cout << "Введите сообщения: "; 
 		ZeroMemory(sendbuffer, DEFAULT_BUFFER_LENGTH);
-		SetConsoleCP(1251);
 		cin.getline(sendbuffer, DEFAULT_BUFFER_LENGTH);
 		SetConsoleCP(866);
 	} while (iResult > 0 && strcmp(sendbuffer, "exit"));
@@ -154,6 +139,18 @@ void main()
 
 VOID Receive(SOCKET connect_socket)
 {
+	CHAR buffer[DEFAULT_BUFFER_LENGTH];
+	while (true)
+	{
+		INT iResult = recv(connect_socket, buffer, DEFAULT_BUFFER_LENGTH - 1, 0);
+		if (iResult <= 0)
+		{
+			cout << "Disconnected from server" << endl;
+			break;
+		}
+		buffer[iResult] = '\0';
+		cout << "\nReceived: " << buffer << "\nEnter message: ";
+	}
 
 }
 	
