@@ -152,6 +152,24 @@ void main()
 
 
 }
+VOID SendToAllClients(CHAR* buffer, INT length, SOCKET socket_sender)
+{
+				for(int i = 0; i<MAX_CONNECTIONS;i++)
+				{
+					if (sockets[i] && sockets[i]!=socket_sender)
+					{
+						if (send(sockets[i], buffer, strlen(buffer), 0) == SOCKET_ERROR)
+						{
+							cout << "send() failed with ";
+							PrintLastError(WSAGetLastError());
+							closesocket(socket_sender);
+							break;
+						}
+					}
+				}
+
+
+}
 
 VOID ClientHandler(SOCKET client_socket)
 {
@@ -165,19 +183,7 @@ VOID ClientHandler(SOCKET client_socket)
 			if (iResult > 0)
 			{
 				cout << "Received Bytes: " << iResult << ", Message: " << recvbuffer << endl;
-				for(int i = 0; i<MAX_CONNECTIONS;i++)
-				{
-					if (sockets[i])
-					{
-						if (send(sockets[i], recvbuffer, strlen(recvbuffer), 0) == SOCKET_ERROR)
-						{
-							cout << "send() failed with ";
-							PrintLastError(WSAGetLastError());
-							closesocket(client_socket);
-							break;
-						}
-					}
-				}
+				SendToAllClients(recvbuffer, iResult, client_socket);
 			}
 			else if (iResult == 0) cout << "Connection closing..." << endl;
 			else
