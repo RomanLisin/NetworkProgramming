@@ -26,7 +26,13 @@ SOCKET sockets[MAX_CONNECTIONS] = {};
 DWORD dwThreadIDs[MAX_CONNECTIONS] = {};
 HANDLE hThreads[MAX_CONNECTIONS] = {};
 
-VOID ClientHandler(SOCKET client_socket);
+VOID ClientHandler(LPVOID lpParam);
+
+struct Data
+{
+	SOCKET client_socket;
+	INT i = 0;
+};
 
 void main()
 {
@@ -100,12 +106,16 @@ void main()
 
 	//6) Принимаем запросы на соединение от клиентов:
 	
-	INT i = 0;
+	//INT i = 0;
+	Data data;
+	
 	cout << "Wait for clients..." << endl;
 	do
 	{
-		SOCKET client_socket = accept(listen_socket, NULL, NULL);
-		if (client_socket == INVALID_SOCKET)
+		Data* pData = new Data; // память для каждого подключения
+		pData->client_socket = accept(listen_socket, NULL, NULL);
+		pData->i = data.i; // копируем текущий индекс
+		if (pData->client_socket == INVALID_SOCKET)
 		{
 			cout << "accept() failed with ";
 			PrintLastError(WSAGetLastError());
@@ -114,28 +124,37 @@ void main()
 			WSACleanup();
 			return;
 		}
-		if(i<MAX_CONNECTIONS)
+		if (pData->i < MAX_CONNECTIONS)
 		{
-			sockets[i] = client_socket;
-			hThreads[i] = CreateThread
+			sockets[pData->i] = pData->client_socket;
+			hThreads[pData->i] = CreateThread
 			(
 				NULL,
 				0,
 				(LPTHREAD_START_ROUTINE)ClientHandler,
-				(LPVOID)sockets[i],
+				(LPVOID)pData,
 				0,
-				&dwThreadIDs[i]
+				&dwThreadIDs[pData->i]
 			);
-			i++;
+			if (hThreads[pData->i] == NULL)
+			{
+				closesocket(pData->client_socket);
+				delete pData;
+			}
+			else
+			{
+				data.i++;
+			}
 		}
 		else
 		{
 			
 			CHAR recv_buffer[DEFAULT_BUFFER_LENGTH] = {};
-			INT iResult = recv(client_socket, recv_buffer, DEFAULT_BUFFER_LENGTH, 0);
+			INT iResult = recv(pData->client_socket, recv_buffer, DEFAULT_BUFFER_LENGTH, 0);
 			cout << "ExtraClient sends: " << recv_buffer << endl;
-			send(client_socket, g_OVERFLOW, strlen(g_OVERFLOW), 0);
-			closesocket(client_socket);
+			send(pData->client_socket, g_OVERFLOW, strlen(g_OVERFLOW), 0);
+			closesocket(pData->client_socket);
+			delete pData;
 		}
 		//ClientHandle(client_socket); // в потоке можем запустить только функцию
 	} while (true);
@@ -171,27 +190,29 @@ VOID SendToAllClients(CHAR* buffer, INT length, SOCKET socket_sender)
 
 }
 
-VOID ClientHandler(SOCKET client_socket)
+VOID ClientHandler(LPVOID lpParam)
 {
 		//7) Получение и отправка данных:
 			INT iResult = 0;
 		CHAR recvbuffer[DEFAULT_BUFFER_LENGTH] = {};
+		Data* pData = (Data*)lpParam;
 		do
 		{
 			ZeroMemory(recvbuffer, DEFAULT_BUFFER_LENGTH);
-			iResult = recv(client_socket, recvbuffer, DEFAULT_BUFFER_LENGTH, 0); // возвращает количество байт
+			iResult = recv(pData->client_socket, recvbuffer, DEFAULT_BUFFER_LENGTH, 0); // возвращает количество байт
 			if (iResult > 0)
 			{
 				cout << "Received Bytes: " << iResult << ", Message: " << recvbuffer << endl;
-				SendToAllClients(recvbuffer, iResult, client_socket);
+				SendToAllClients(recvbuffer, iResult, pData->client_socket);
 			}
-			else if (iResult == 0) cout << "Connection closing..." << endl;
-			else
+			else/* if (iResult == 0)*/ cout << "Client " << pData->i << "Connection closing..." << endl;
+			/*else
 			{
 				cout << "recv() failed with ";
 				PrintLastError(WSAGetLastError());
-			}
+			}*/
 		} while (iResult > 0);
-	closesocket(client_socket);
+	closesocket(pData->client_socket);
+	delete pData;
 
 }
