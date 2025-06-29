@@ -205,7 +205,7 @@ VOID ClientHandler(LPVOID lpParam)
 				cout << "Received Bytes: " << iResult << ", Message: " << recvbuffer << endl;
 				SendToAllClients(recvbuffer, iResult, pData->client_socket);
 			}
-			else/* if (iResult == 0)*/ cout << "Client " << pData->i << "Connection closing..." << endl;
+			else/* if (iResult == 0)*/ cout << "Client " << pData->i << " Connection closing..." << endl;
 			/*else
 			{
 				cout << "recv() failed with ";

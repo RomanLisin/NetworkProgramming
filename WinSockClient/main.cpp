@@ -26,7 +26,7 @@ VOID Receive(SOCKET connect_socket);
 void main()
 {
 
-	setlocale(LC_ALL, "");
+	setlocale(LC_ALL, "Russian_Russia.1251");
 	cout << "WinSock Client" << endl;
 
 	//1)  Инициализация WinSock
@@ -87,8 +87,8 @@ void main()
 	receiver.detach();
 
 	//5) отправка и получение данных с Сервера:
-	CHAR sendbuffer[DEFAULT_BUFFER_LENGTH] = "Hello Server, I am client";
-	CHAR recvbuffer[DEFAULT_BUFFER_LENGTH] = {};
+	CHAR sendbuffer[DEFAULT_BUFFER_LENGTH] = " Hello Server, I am client ";
+	//CHAR recvbuffer[DEFAULT_BUFFER_LENGTH] = {};
 	do
 	{
 		iResult = send(connect_socket, sendbuffer, strlen(sendbuffer), 0);
@@ -103,22 +103,22 @@ void main()
 
 		//iResult = shutdown(connect_socket, SD_SEND);
 		//if (iResult == SOCKET_ERROR)PrintLastError(WSAGetLastError());
-		ZeroMemory(recvbuffer, DEFAULT_BUFFER_LENGTH);
+		/*ZeroMemory(recvbuffer, DEFAULT_BUFFER_LENGTH);
 			iResult = recv(connect_socket, recvbuffer, DEFAULT_BUFFER_LENGTH, 0);
 			if (iResult > 0)cout << "Receved bytes: " << iResult << ", Message: " << recvbuffer << endl;
-			else if (iResult == 0) cout << "Connection closing" << endl;
+			else if (iResult == 0) cout << " Connection closing" << endl;
 			else PrintLastError(WSAGetLastError());
 			if (strcmp(recvbuffer, g_OVERFLOW) == 0)
 			{
 				system("PAUSE");
 				break;
-			}
-		SetConsoleCP(1251);
-		cout << "Введите сообщения: "; 
+			}*/
+		cout << "Input message: "; 
 		ZeroMemory(sendbuffer, DEFAULT_BUFFER_LENGTH);
+		SetConsoleCP(1251);
 		cin.getline(sendbuffer, DEFAULT_BUFFER_LENGTH);
 		SetConsoleCP(866);
-	} while (iResult > 0 && strcmp(sendbuffer, "exit"));
+	} while (/*iResult > 0 && */strcmp(sendbuffer, "exit"));
 
 	// 6) закрываем соединение
 	iResult = shutdown(connect_socket, SD_SEND);
